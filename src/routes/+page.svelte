@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
 </script>
 
-<Button>Button</Button>
 <div class="bg-surface p-8 text-on-surface">
 	<h1 class="mb-4 font-display text-5xl">Editorial Precision</h1>
 	<p class="mb-8 font-sans text-lg">
