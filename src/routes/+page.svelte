@@ -1,2 +1,10 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<div class="bg-surface p-8 text-on-surface">
+	<h1 class="mb-4 font-display text-5xl">Editorial Precision</h1>
+	<p class="mb-8 font-sans text-lg">
+		This is body text in <span class="font-bold text-primary">Funnel Sans</span>.
+	</p>
+
+	<div class="rounded-md bg-surface-container-low p-4 shadow-ambient-glow">
+		<code class="font-mono text-primary-fixed-dim"> const manuscript = "Kinetic"; </code>
+	</div>
+</div>
