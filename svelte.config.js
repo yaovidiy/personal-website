@@ -17,6 +17,9 @@ const config = {
 		}
 	},
 	kit: {
+		alias: {
+			'@/*': './src/lib/*'
+		},
 		adapter: adapter(),
 		experimental: {
 			remoteFunctions: true
