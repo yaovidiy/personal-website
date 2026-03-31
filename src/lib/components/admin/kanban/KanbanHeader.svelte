@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Search, Plus, LayoutGrid } from '@lucide/svelte';
+	import { Search, Plus } from '@lucide/svelte';
 
 	let {
 		searchQuery = $bindable(''),
