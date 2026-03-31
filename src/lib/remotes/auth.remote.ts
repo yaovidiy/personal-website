@@ -53,27 +53,32 @@ const SignUpSchema = v.object({
 });
 
 export const registerUser = form(SignUpSchema, async (data) => {
-	const event = getRequestEvent();
-	const {
-		data: result,
-		response,
-		error
-	} = await signUp({
-		name: data.name,
-		email: data.email,
-		password: data._password
-	});
+	try {
+		const event = getRequestEvent();
+		const {
+			data: result,
+			response,
+			error
+		} = await signUp({
+			name: data.name,
+			email: data.email,
+			password: data._password
+		});
 
-	if (!result || error) {
-		const message =
-			response?.status === 409
-				? 'An account with this email already exists.'
-				: 'Sign-up failed. Please try again.';
-		throw new Error(message);
+		console.log(result, error, 'Sign up result');
+		if (!result || error) {
+			const message =
+				response?.status === 409
+					? 'An account with this email already exists.'
+					: 'Sign-up failed. Please try again.';
+			throw new Error(message);
+		}
+
+		forwardSetCookies(response as unknown as Response, event);
+		redirect(303, '/admin');
+	} catch (e) {
+		console.log(e, 'Signup error');
 	}
-
-	forwardSetCookies(response as unknown as Response, event);
-	redirect(303, '/admin');
 });
 
 // ---------------------------------------------------------------------------
