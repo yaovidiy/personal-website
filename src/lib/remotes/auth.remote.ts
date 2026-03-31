@@ -3,6 +3,7 @@ import { getRequestEvent } from '$app/server';
 import { redirect } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { signIn, signOut as apiSignOut, signUp } from '$lib/api/auth';
+import { logger } from '$lib/server/logger';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -16,7 +17,10 @@ import { signIn, signOut as apiSignOut, signUp } from '$lib/api/auth';
 function forwardSetCookies(raw: Response, event: ReturnType<typeof getRequestEvent>) {
 	// Prefer the non-standard but convenient Headers.getSetCookie(), if available.
 	let cookies: string[] = [];
-	const headerGetSetCookie = (raw.headers as any).getSetCookie?.();
+	const headerGetSetCookie =
+		typeof (raw.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie === 'function'
+			? (raw.headers as Headers & { getSetCookie: () => string[] }).getSetCookie()
+			: undefined;
 	if (Array.isArray(headerGetSetCookie) && headerGetSetCookie.length > 0) {
 		cookies = headerGetSetCookie;
 	} else {
@@ -80,17 +84,22 @@ const SignUpSchema = v.object({
 	name: v.pipe(v.string(), v.minLength(2, 'Name must be at least 2 characters.')),
 	email: v.pipe(v.string(), v.email('Please enter a valid email.')),
 	// Prefix with underscore so the value is NOT repopulated on validation failure.
-	_password: v.pipe(v.string(), v.minLength(8, 'Password must be at least 8 characters.')),
+	_password: v.pipe(v.string(), v.minLength(8, 'Password must be at least 8 characters.'))
 });
 
 export const registerUser = form(SignUpSchema, async (data) => {
 	const event = getRequestEvent();
-	const { data: result, response, error } = await signUp({
+	const {
+		data: result,
+		response,
+		error
+	} = await signUp({
 		name: data.name,
 		email: data.email,
-		password: data._password,
+		password: data._password
 	});
 
+	logger.info('Sign up result', { result, error });
 	if (!result || error) {
 		const message =
 			response?.status === 409
@@ -110,21 +119,23 @@ export const registerUser = form(SignUpSchema, async (data) => {
 const SignInSchema = v.object({
 	email: v.pipe(v.string(), v.email('Please enter a valid email.')),
 	// Prefix with underscore so the password is NOT repopulated on failure.
-	_password: v.pipe(v.string(), v.minLength(1, 'Password is required.')),
+	_password: v.pipe(v.string(), v.minLength(1, 'Password is required.'))
 });
 
 export const loginUser = form(SignInSchema, async (data) => {
 	const event = getRequestEvent();
-	const { data: result, response, error } = await signIn({
+	const {
+		data: result,
+		response,
+		error
+	} = await signIn({
 		email: data.email,
-		password: data._password,
+		password: data._password
 	});
 
 	if (!result || error) {
 		const message =
-			response?.status === 401
-				? 'Invalid email or password.'
-				: 'Sign-in failed. Please try again.';
+			response?.status === 401 ? 'Invalid email or password.' : 'Sign-in failed. Please try again.';
 		throw new Error(message);
 	}
 

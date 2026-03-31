@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { initToastState } from '$lib/components/ui/toast-state.svelte';
+	import Toast from '$lib/components/ui/Toast.svelte';
 	import AdminSidebar from '$lib/components/admin/AdminSidebar.svelte';
 
 	let {
@@ -7,7 +9,11 @@
 	}: {
 		children?: Snippet;
 	} = $props();
+
+	initToastState();
 </script>
+
+<Toast />
 
 <div class="flex min-h-screen flex-col md:flex-row">
 	<AdminSidebar />
