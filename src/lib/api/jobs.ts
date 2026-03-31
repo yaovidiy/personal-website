@@ -1,4 +1,4 @@
-import { client } from './client';
+import { client, createTypedClient } from './client';
 
 import type { paths } from './types';
 
@@ -7,8 +7,18 @@ import type { paths } from './types';
  * Provides typed wrappers for job-related endpoints.
  */
 
-export const getJobs = async (query?: paths['/api/v1/job/']['get']['parameters']['query']) => {
-  return await client.GET('/api/v1/job/', {
+/**
+ * Fetch jobs with optional server-side fetch forwarding.
+ *
+ * Pass `event.fetch` from remote functions so that SvelteKit forwards
+ * the incoming request's cookies to the backend automatically.
+ */
+export const getJobs = async (
+  query?: paths['/api/v1/job/']['get']['parameters']['query'],
+  fetchFn?: typeof fetch,
+) => {
+  const c = fetchFn ? createTypedClient(fetchFn) : client;
+  return await c.GET('/api/v1/job/', {
     params: {
       query,
     },

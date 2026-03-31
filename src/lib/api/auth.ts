@@ -1,4 +1,4 @@
-import { client } from './client';
+import { client, createTypedClient } from './client';
 import type { paths, components } from './types';
 
 /**
@@ -29,7 +29,19 @@ export const signOut = async () => {
   });
 };
 
-export const getSessionContext = async () => {
+/**
+ * Fetches the current session from the backend.
+ *
+ * Pass `event.fetch` from `hooks.server.ts` (or any SvelteKit load function)
+ * so that the request is made with the same cookies as the incoming request.
+ * Falls back to the global client when called from remote functions or the
+ * browser where cookie forwarding is handled automatically.
+ */
+export const getSessionContext = async (fetchFn?: typeof fetch) => {
+  if (fetchFn) {
+    const sessionClient = createTypedClient(fetchFn);
+    return await sessionClient.GET('/api/v1/auth/get-session');
+  }
   return await client.GET('/api/v1/auth/get-session');
 };
 
