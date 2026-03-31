@@ -79,7 +79,7 @@
 						<item.icon
 							class={cn(
 								'mr-3 h-5 w-5 shrink-0',
-								page.url.pathname === item.href
+								page.url.pathname === resolve(item.href)
 									? 'text-on-primary'
 									: 'text-muted-foreground group-hover:text-foreground'
 							)}
