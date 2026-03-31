@@ -14,15 +14,46 @@ import { signIn, signOut as apiSignOut, signUp } from '$lib/api/auth';
  * SvelteKit response so the browser receives the session cookie.
  */
 function forwardSetCookies(raw: Response, event: ReturnType<typeof getRequestEvent>) {
-	// Headers.getSetCookie() is supported in the Fetch API
-	const cookies = raw.headers.getSetCookie?.() ?? [];
+	// Prefer the non-standard but convenient Headers.getSetCookie(), if available.
+	let cookies: string[] = [];
+	const headerGetSetCookie = (raw.headers as any).getSetCookie?.();
+	if (Array.isArray(headerGetSetCookie) && headerGetSetCookie.length > 0) {
+		cookies = headerGetSetCookie;
+	} else {
+		// Fallback: collect all `set-cookie` headers via standard iteration.
+		for (const [key, value] of raw.headers) {
+			if (key.toLowerCase() === 'set-cookie' && value) {
+				cookies.push(value);
+			}
+		}
+
+		// Final fallback: some environments expose only the first `set-cookie` via get().
+		if (cookies.length === 0) {
+			const single = raw.headers.get('set-cookie');
+			if (single) cookies.push(single);
+		}
+	}
 	for (const cookieStr of cookies) {
 		// Parse each Set-Cookie string into its parts so SvelteKit can
 		// serialize it properly when sending the response.
 		const [nameValue, ...directives] = cookieStr.split(';').map((s) => s.trim());
 		const eqIdx = nameValue.indexOf('=');
+		// Skip malformed cookie segments that don't contain a valid name=value pair.
+		if (eqIdx <= 0) {
+			continue;
+		}
 		const name = nameValue.slice(0, eqIdx);
-		const value = decodeURIComponent(nameValue.slice(eqIdx + 1));
+		const rawValue = nameValue.slice(eqIdx + 1);
+		let value = rawValue;
+		// Only attempt to decode if the value appears percent-encoded, and
+		// guard against malformed percent-encoding that would throw.
+		if (rawValue.includes('%')) {
+			try {
+				value = decodeURIComponent(rawValue);
+			} catch {
+				// Fall back to the raw value if decoding fails.
+			}
+		}
 
 		const opts: Parameters<typeof event.cookies.set>[2] = { path: '/' };
 		for (const directive of directives) {
@@ -119,7 +150,11 @@ export const loginUser = form(SignInSchema, async (data) => {
 export const logoutUser = command(async () => {
 	const event = getRequestEvent();
 
-	await apiSignOut();
+	const cookie = event.request.headers.get('cookie');
+	await apiSignOut({
+		headers: cookie ? { cookie } : undefined,
+		fetch: event.fetch,
+	});
 
 	// Clear the session cookie on the browser side by setting an expired one.
 	for (const name of event.cookies.getAll().map((c) => c.name)) {

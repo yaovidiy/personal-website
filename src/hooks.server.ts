@@ -14,7 +14,11 @@ import { getSessionContext } from '$lib/api/auth';
  */
 export const handle: Handle = async ({ event, resolve }) => {
 	try {
-		const { data } = await getSessionContext(event.fetch);
+		const cookie = event.request.headers.get('cookie');
+		const { data } = await getSessionContext({
+			headers: cookie ? { cookie } : undefined,
+			fetch: event.fetch
+		});
 		event.locals.user = data?.user ?? null;
 		event.locals.session = data?.session ?? null;
 	} catch {
