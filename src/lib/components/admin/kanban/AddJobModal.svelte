@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { STATUS_CONFIG, KANBAN_COLUMNS } from '$lib/types/job';
+	import { STATUS_CONFIG, KANBAN_COLUMNS, type JobStatus } from '$lib/types/job';
 	import { addJob } from '$lib/remotes/jobs.remote';
 	import { fade } from 'svelte/transition';
 	import { X } from '@lucide/svelte';
+	import { enhance } from '$app/forms';
+	import type { ActionResult } from '@sveltejs/kit';
 
 	let {
 		onClose,
@@ -12,30 +14,11 @@
 		onSuccess: () => void;
 	} = $props();
 
-	let formError = $state<string | null>(null);
 	let isSubmitting = $state(false);
+	const { title, url, description, status } = addJob.fields;
 
 	function handleKeyDown(e: KeyboardEvent) {
 		if (e.key === 'Escape') onClose();
-	}
-
-	async function handleSubmit(e: SubmitEvent) {
-		e.preventDefault();
-		const form = e.target as HTMLFormElement;
-		const formData = new FormData(form);
-
-		isSubmitting = true;
-		formError = null;
-
-		try {
-			await addJob.call(formData);
-			onSuccess();
-			onClose();
-		} catch (err) {
-			formError = err instanceof Error ? err.message : 'Failed to add job';
-		} finally {
-			isSubmitting = false;
-		}
 	}
 </script>
 
@@ -60,19 +43,37 @@
 		</button>
 	</div>
 
-	<form onsubmit={handleSubmit}>
+	<form
+		{...addJob}
+		use:enhance={() => {
+			isSubmitting = true;
+			return async ({ result }: { result: ActionResult }) => {
+				isSubmitting = false;
+				if (result.type === 'success') {
+					onSuccess();
+					onClose();
+				}
+			};
+		}}
+	>
 		<div class="form-body">
+			<!-- Global validation issues -->
+			{#each addJob.fields.allIssues() as issue (issue.message)}
+				<div class="form-error">{issue.message}</div>
+			{/each}
+
 			<!-- Title -->
 			<div class="form-field">
 				<label class="form-label" for="add-title">Title *</label>
 				<input
 					id="add-title"
-					name="title"
-					type="text"
+					{...title.as('text')}
 					class="form-input"
 					placeholder="e.g. Senior Frontend Engineer"
-					required
 				/>
+				{#each title.issues() as issue (issue.message)}
+					<p class="field-error">{issue.message}</p>
+				{/each}
 			</div>
 
 			<!-- URL -->
@@ -80,11 +81,13 @@
 				<label class="form-label" for="add-url">URL</label>
 				<input
 					id="add-url"
-					name="url"
-					type="url"
+					{...url.as('url')}
 					class="form-input"
 					placeholder="https://..."
 				/>
+				{#each url.issues() as issue (issue.message)}
+					<p class="field-error">{issue.message}</p>
+				{/each}
 			</div>
 
 			<!-- Description -->
@@ -97,23 +100,25 @@
 					placeholder="Job description or notes…"
 					rows="3"
 				></textarea>
+				{#each description.issues() as issue (issue.message)}
+					<p class="field-error">{issue.message}</p>
+				{/each}
 			</div>
 
 			<!-- Status -->
 			<div class="form-field">
 				<label class="form-label" for="add-status">Initial Status</label>
-				<select id="add-status" name="status" class="form-select">
-					{#each KANBAN_COLUMNS as status (status)}
-						<option value={status} selected={status === 'applied'}>
-							{STATUS_CONFIG[status].label}
+				<select id="add-status" {...status.as('select')} class="form-select">
+					{#each KANBAN_COLUMNS as s (s)}
+						<option value={s} selected={s === 'applied'}>
+							{STATUS_CONFIG[s as JobStatus].label}
 						</option>
 					{/each}
 				</select>
+				{#each status.issues() as issue (issue.message)}
+					<p class="field-error">{issue.message}</p>
+				{/each}
 			</div>
-
-			{#if formError}
-				<div class="form-error">{formError}</div>
-			{/if}
 		</div>
 
 		<div class="form-footer">
@@ -237,6 +242,12 @@
 		padding: 0.5rem 0.75rem;
 		background: color-mix(in oklch, var(--color-destructive) 8%, transparent);
 		border-radius: var(--radius-md);
+	}
+
+	.field-error {
+		font-size: 0.75rem;
+		color: var(--color-destructive);
+		margin-top: 0.125rem;
 	}
 
 	.form-footer {

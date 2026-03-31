@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Job, JobStatus } from '$lib/types/job';
+	import type { JobStatus } from '$lib/types/job';
 	import { getDragState, setDragOver, endDrag } from './kanban-state.svelte';
 	import { Trash2 } from '@lucide/svelte';
 
@@ -44,8 +44,7 @@
 	<div
 		class="reject-zone"
 		class:is-active={isActive}
-		role="button"
-		tabindex="-1"
+		role="region"
 		aria-label="Drop here to reject"
 		ondragover={handleDragOver}
 		ondragleave={handleDragLeave}

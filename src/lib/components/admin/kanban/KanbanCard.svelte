@@ -127,6 +127,9 @@
 			if (nextIndex >= 0 && nextIndex < KANBAN_COLUMNS.length) {
 				onStatusChange(job.id, KANBAN_COLUMNS[nextIndex]);
 			}
+		} else if (onStatusChange && (e.key === 'Delete' || e.key === 'Backspace')) {
+			e.preventDefault();
+			onStatusChange(job.id, 'rejected' as JobStatus);
 		}
 	}
 	const isDragging = $derived(dragState.draggedJob?.id === job.id);

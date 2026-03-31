@@ -3,6 +3,7 @@ import { getRequestEvent } from '$app/server';
 import { redirect } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { signIn, signOut as apiSignOut, signUp } from '$lib/api/auth';
+import { logger } from '$lib/server/logger';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -16,7 +17,10 @@ import { signIn, signOut as apiSignOut, signUp } from '$lib/api/auth';
 function forwardSetCookies(raw: Response, event: ReturnType<typeof getRequestEvent>) {
 	// Prefer the non-standard but convenient Headers.getSetCookie(), if available.
 	let cookies: string[] = [];
-	const headerGetSetCookie = (raw.headers as any).getSetCookie?.();
+	const headerGetSetCookie =
+		typeof (raw.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie === 'function'
+			? (raw.headers as Headers & { getSetCookie: () => string[] }).getSetCookie()
+			: undefined;
 	if (Array.isArray(headerGetSetCookie) && headerGetSetCookie.length > 0) {
 		cookies = headerGetSetCookie;
 	} else {
@@ -84,32 +88,28 @@ const SignUpSchema = v.object({
 });
 
 export const registerUser = form(SignUpSchema, async (data) => {
-	try {
-		const event = getRequestEvent();
-		const {
-			data: result,
-			response,
-			error
-		} = await signUp({
-			name: data.name,
-			email: data.email,
-			password: data._password
-		});
+	const event = getRequestEvent();
+	const {
+		data: result,
+		response,
+		error
+	} = await signUp({
+		name: data.name,
+		email: data.email,
+		password: data._password
+	});
 
-		console.log(result, error, 'Sign up result');
-		if (!result || error) {
-			const message =
-				response?.status === 409
-					? 'An account with this email already exists.'
-					: 'Sign-up failed. Please try again.';
-			throw new Error(message);
-		}
-
-		forwardSetCookies(response as unknown as Response, event);
-		redirect(303, '/admin');
-	} catch (e) {
-		console.log(e, 'Signup error');
+	logger.info('Sign up result', { result, error });
+	if (!result || error) {
+		const message =
+			response?.status === 409
+				? 'An account with this email already exists.'
+				: 'Sign-up failed. Please try again.';
+		throw new Error(message);
 	}
+
+	forwardSetCookies(response as unknown as Response, event);
+	redirect(303, '/admin');
 });
 
 // ---------------------------------------------------------------------------
