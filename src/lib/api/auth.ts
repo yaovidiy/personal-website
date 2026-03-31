@@ -23,16 +23,21 @@ export const signIn = async (body: NonNullable<paths['/api/v1/auth/sign-in/email
   });
 };
 
-export const signOut = async () => {
+export const signOut = async (options?: { fetch?: typeof fetch; headers?: Record<string, string> }) => {
   return await client.POST('/api/v1/auth/sign-out', {
     body: {},
+    ...options
   });
 };
 
-export const getSessionContext = async () => {
-  return await client.GET('/api/v1/auth/get-session');
+export const getSessionContext = async (options?: { fetch?: typeof fetch; headers?: Record<string, string> }) => {
+  return await client.GET('/api/v1/auth/get-session', {
+    ...options
+  });
 };
 
-export const listSessions = async () => {
-  return await client.GET('/api/v1/auth/list-sessions');
+export const listSessions = async (options?: { fetch?: typeof fetch; headers?: Record<string, string> }) => {
+  return await client.GET('/api/v1/auth/list-sessions', {
+    ...options
+  });
 };
