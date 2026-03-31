@@ -40,17 +40,20 @@
 	 */
 	function getTimeInStage(dateStr: Record<string, never> | null): string | null {
 		if (!dateStr) return null;
-		try {
-			const date = new Date(dateStr as unknown as string);
-			const now = new Date();
-			const diffMs = now.getTime() - date.getTime();
-			const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-			if (days === 0) return 'Today';
-			if (days === 1) return '1 day';
-			return `${days} days`;
-		} catch {
+
+		const date = new Date(dateStr as unknown as string);
+		const time = date.getTime();
+		if (Number.isNaN(time)) {
 			return null;
 		}
+
+		const now = new Date();
+		const diffMs = Math.max(0, now.getTime() - time);
+		const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+		if (days === 0) return 'Today';
+		if (days === 1) return '1 day';
+		return `${days} days`;
 	}
 
 	const domain = $derived(getDomain(job.url));

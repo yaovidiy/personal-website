@@ -10,13 +10,20 @@
 		return STATUS_CONFIG[job.status as JobStatus] ?? STATUS_CONFIG['applied'];
 	});
 
+	// Only show the ghost when we have a meaningful touch position
+	const hasTouchPosition = $derived(
+		typeof dragState.touchX === 'number' &&
+			typeof dragState.touchY === 'number' &&
+			!(dragState.touchX === 0 && dragState.touchY === 0)
+	);
+
 	// The ghost should be centered on the touch point
 	const style = $derived(
 		`left: ${dragState.touchX}px; top: ${dragState.touchY}px; transform: translate(-50%, -50%) rotate(3deg);`
 	);
 </script>
 
-{#if dragState.isDragging && dragState.draggedJob}
+{#if dragState.isDragging && dragState.draggedJob && hasTouchPosition}
 	<div class="kanban-ghost" {style} transition:fade={{ duration: 100 }}>
 		<div class="ghost-card">
 			<h4 class="ghost-title">{dragState.draggedJob.title}</h4>
