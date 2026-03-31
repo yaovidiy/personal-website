@@ -108,7 +108,11 @@ export const loginUser = form(SignInSchema, async (data) => {
 export const logoutUser = command(async () => {
 	const event = getRequestEvent();
 
-	await apiSignOut();
+	const cookie = event.request.headers.get('cookie');
+	await apiSignOut({
+		headers: cookie ? { cookie } : undefined,
+		fetch: event.fetch,
+	});
 
 	// Clear the session cookie on the browser side by setting an expired one.
 	for (const name of event.cookies.getAll().map((c) => c.name)) {
